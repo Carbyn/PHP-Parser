@@ -15,15 +15,17 @@ class CodeParsingTest extends CodeTestAbstract
         $lexer = new Lexer\Emulative(array('usedAttributes' => array(
             'startLine', 'endLine', 'startFilePos', 'endFilePos', 'comments'
         )));
+        $errors5 = new ErrorHandler\Collecting();
+        $errors7 = new ErrorHandler\Collecting();
         $parser5 = new Parser\Php5($lexer, array(
-            'throwOnError' => false,
+            'errorHandler' => $errors5,
         ));
         $parser7 = new Parser\Php7($lexer, array(
-            'throwOnError' => false,
+            'errorHandler' => $errors7,
         ));
 
-        $output5 = $this->getParseOutput($parser5, $code);
-        $output7 = $this->getParseOutput($parser7, $code);
+        $output5 = $this->getParseOutput($parser5, $errors5, $code);
+        $output7 = $this->getParseOutput($parser7, $errors7, $code);
 
         if ($mode === 'php5') {
             $this->assertSame($expected, $output5, $name);
@@ -37,12 +39,11 @@ class CodeParsingTest extends CodeTestAbstract
         }
     }
 
-    private function getParseOutput(Parser $parser, $code) {
+    private function getParseOutput(Parser $parser, ErrorHandler\Collecting $errors, $code) {
         $stmts = $parser->parse($code);
-        $errors = $parser->getErrors();
 
         $output = '';
-        foreach ($errors as $error) {
+        foreach ($errors->getErrors() as $error) {
             $output .= $this->formatErrorMessage($error, $code) . "\n";
         }
 
